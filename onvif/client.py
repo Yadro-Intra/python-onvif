@@ -26,10 +26,10 @@ import datetime as dt
 # when some thing was wrong
 def safe_func(func):
     def wrapped(*args, **kwargs):
-        try:
+        #try:
             return func(*args, **kwargs)
-        except Exception as err:
-            raise ONVIFError(err)
+        #except Exception as err:
+        #    raise ONVIFError(err)
     return wrapped
 
 
@@ -127,7 +127,8 @@ class ONVIFService(object):
         self.daemon = daemon
 
         self.dt_diff = dt_diff
-        self.set_wsse()
+        if self.passwd:
+	    self.set_wsse()
 
         # Method to create type instance of service method defined in WSDL
         self.create_type = self.ws_client.factory.create
@@ -234,13 +235,17 @@ class ONVIFCamera(object):
                          'imaging': None, 'events': None, 'analytics': None }
     use_services_template = {'devicemgmt': True, 'ptz': True, 'media': True,
                          'imaging': True, 'events': True, 'analytics': True }
-    def __init__(self, host, port ,user, passwd, wsdl_dir=os.path.join(os.path.dirname(os.path.dirname(__file__)), "wsdl"),
+    def __init__(self, host, port,
+                 user, passwd=None, force_password=False,
+                 wsdl_dir=os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                       "wsdl"),
                  cache_location=None, cache_duration=None,
                  encrypt=True, daemon=False, no_cache=False, adjust_time=False):
         self.host = host
         self.port = int(port)
         self.user = user
         self.passwd = passwd
+	self.force_password = force_password
         self.wsdl_dir = wsdl_dir
         self.cache_location = cache_location
         self.cache_duration = cache_duration
@@ -258,6 +263,7 @@ class ONVIFCamera(object):
 
         self.to_dict = ONVIFService.to_dict
 
+
     def update_xaddrs(self):
         # Establish devicemgmt service first
         self.dt_diff = None
@@ -269,6 +275,8 @@ class ONVIFCamera(object):
             self.devicemgmt.dt_diff = self.dt_diff
             self.devicemgmt.set_wsse()
         # Get XAddr of services on the device
+        if not self.force_password and not self.passwd:
+            return
         self.xaddrs = { }
         capabilities = self.devicemgmt.GetCapabilities({'Category': 'All'})
         for name, capability in capabilities:
