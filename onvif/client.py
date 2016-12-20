@@ -26,10 +26,10 @@ import datetime as dt
 # when some thing was wrong
 def safe_func(func):
     def wrapped(*args, **kwargs):
-        #try:
+        try:
             return func(*args, **kwargs)
-        #except Exception as err:
-        #    raise ONVIFError(err)
+        except Exception as err:
+            raise ONVIFError(err)
     return wrapped
 
 
